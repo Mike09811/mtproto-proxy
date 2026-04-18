@@ -1,27 +1,52 @@
+# ============================================================
+# mtprotoproxy 配置文件
+# ============================================================
+
+# 代理监听端口（建议用 443 伪装成 HTTPS 流量）
 PORT = 443
 
-# name -> secret (32 hex chars)
+# 用户密钥（32位十六进制字符）
+# 生成方法: head -c 16 /dev/urandom | xxd -ps
+# 支持多用户，每个用户一个密钥
 USERS = {
-    "tg":  "00000000000000000000000000000001",
-    # "tg2": "0123456789abcdef0123456789abcdef",
+    "tg": "00000000000000000000000000000001",
+    # "user2": "0123456789abcdef0123456789abcdef",
 }
 
+# 连接模式
 MODES = {
-    # Classic mode, easy to detect
-    "classic": False,
-
-    # Makes the proxy harder to detect
-    # Can be incompatible with very old clients
-    "secure": False,
-
-    # Makes the proxy even more hard to detect
-    # Can be incompatible with old clients
-    "tls": True
+    "classic": False,   # 经典模式，容易被检测
+    "secure": False,    # 安全模式，较难检测
+    "tls": True,        # TLS 伪装模式，推荐
 }
 
-# The domain for TLS mode, bad clients are proxied there
-# Use random existing domain, proxy checks it on start
-# TLS_DOMAIN = "www.google.com"
+# TLS 伪装域名，无法识别的连接会被转发到这个域名
+# 建议选择你 VPS 所在服务商的域名
+TLS_DOMAIN = "go.microsoft.com"
 
-# Tag for advertising, obtainable from @MTProxybot
-# AD_TAG = "3c09c680b76ee91a4c25ad51f742267d"
+# ============================================================
+# 推广频道/群组 (adtag)
+# ============================================================
+# 步骤：
+#   1. Telegram 找 @MTProxybot
+#   2. 按提示注册代理并绑定频道
+#   3. 获取 tag 后填到下面（取消注释）
+# AD_TAG = "你从MTProxybot获取的tag"
+
+# ============================================================
+# 高级设置（一般不需要修改）
+# ============================================================
+
+# 伪装：将无法识别的连接转发到 TLS_DOMAIN
+MASK = True
+MASK_HOST = TLS_DOMAIN
+MASK_PORT = 443
+
+# 用户连接数限制
+# USER_MAX_TCP_CONNS = {"tg": 100}
+
+# 用户过期时间（日/月/年）
+# USER_EXPIRATIONS = {"tg": "31/12/2026"}
+
+# 用户流量配额（字节，下面是 50GB）
+# USER_DATA_QUOTA = {"tg": 53687091200}
