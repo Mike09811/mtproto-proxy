@@ -139,8 +139,29 @@ configure_proxy() {
     read -rp "$(echo -e "${CYAN}[?]${NC}") TLS 伪装域名 [默认 go.microsoft.com]: " tls_domain
     tls_domain=${tls_domain:-go.microsoft.com}
 
+    # 生成 ee 开头的完整 secret 用于注册
+    local ee_secret="ee${secret}$(echo -n "$tls_domain" | xxd -ps | tr -d '\n')"
+
+    echo ""
+    echo -e "${YELLOW}============================================${NC}"
+    echo -e "${YELLOW}  请先去 Telegram @MTProxybot 注册代理${NC}"
+    echo -e "${YELLOW}============================================${NC}"
+    echo ""
+    echo -e "  1. 打开 Telegram 搜索 ${CYAN}@MTProxybot${NC}"
+    echo -e "  2. 发送 ${CYAN}/newproxy${NC}"
+    echo -e "  3. 输入服务器 IP 和端口: ${CYAN}$(get_public_ip):${port}${NC}"
+    echo -e "  4. 当机器人要求输入 secret 时，发送以下内容:"
+    echo ""
+    echo -e "     ${GREEN}${ee_secret}${NC}"
+    echo ""
+    echo -e "  5. 按提示绑定你要推广的频道"
+    echo -e "  6. 机器人会给你一个 TAG，复制过来"
+    echo ""
+    echo -e "${YELLOW}============================================${NC}"
+    echo ""
+
     # AD_TAG
-    read -rp "$(echo -e "${CYAN}[?]${NC}") 推广 TAG (从 @MTProxybot 获取，留空跳过): " ad_tag
+    read -rp "$(echo -e "${CYAN}[?]${NC}") 推广 TAG (粘贴上面获取的 tag，留空跳过): " ad_tag
 
     # 写配置
     local ad_tag_line="# AD_TAG = \"\""
