@@ -11,7 +11,21 @@
 - 单核 1G 内存可承载约 4000 并发用户
 - 纯 Python，零依赖即可运行
 
-## 快速部署
+## 一键安装
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Mike09811/mtproto-proxy/main/install.sh)
+```
+
+按提示输入端口、密钥、TLS 域名和推广 TAG 即可，全程交互式。
+
+卸载：
+
+```bash
+bash /opt/mtproto-proxy/install.sh uninstall
+```
+
+## 手动部署
 
 ### 方式一：Docker（推荐）
 
