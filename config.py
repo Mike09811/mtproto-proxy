@@ -16,7 +16,7 @@ USERS = {
 # 连接模式
 MODES = {
     "classic": False,   # 经典模式，容易被检测
-    "secure": False,    # 安全模式，较难检测
+    "secure": True,    # 安全模式，支持推广
     "tls": True,        # TLS 伪装模式，推荐
 }
 

@@ -140,7 +140,9 @@ configure_proxy() {
     read -rp "$(echo -e "${CYAN}[?]${NC}") TLS 伪装域名 [默认 go.microsoft.com]: " tls_domain
     tls_domain=${tls_domain:-go.microsoft.com}
 
-    # 生成 ee 开头的完整 secret 用于注册
+    # 生成 dd 开头的 secure secret（用于推广链接）
+    local dd_secret="dd${secret}"
+    # 生成 ee 开头的 TLS secret（更隐蔽）
     local ee_secret="ee${secret}$(echo -n "$tls_domain" | xxd -ps | tr -d '\n')"
 
     echo ""
@@ -157,8 +159,6 @@ configure_proxy() {
     echo ""
     echo -e "  5. 按提示绑定你要推广的频道"
     echo -e "  6. 机器人会给你一个 TAG，复制过来"
-    echo ""
-    echo -e "  (完整 TLS secret 供客户端使用: ${CYAN}${ee_secret}${NC})"
     echo ""
     echo -e "${YELLOW}============================================${NC}"
     echo ""
@@ -181,7 +181,7 @@ USERS = {
 
 MODES = {
     "classic": False,
-    "secure": False,
+    "secure": True,
     "tls": True,
 }
 
@@ -235,6 +235,7 @@ show_info() {
     local tls_domain
     tls_domain=$(python3 -c "exec(open('$INSTALL_DIR/config.py').read()); print(TLS_DOMAIN)" 2>/dev/null || echo "go.microsoft.com")
 
+    local dd_secret="dd${secret}"
     local ee_secret="ee${secret}$(echo -n "$tls_domain" | xxd -ps)"
 
     echo ""
@@ -247,10 +248,12 @@ show_info() {
     echo -e "  密钥:       ${CYAN}$secret${NC}"
     echo -e "  TLS 域名:   ${CYAN}$tls_domain${NC}"
     echo ""
-    echo -e "  ${YELLOW}代理链接:${NC}"
-    echo -e "  tg://proxy?server=${ip}&port=${port}&secret=${ee_secret}"
+    echo -e "  ${YELLOW}推广链接（带频道推广，分享给用户用这个）:${NC}"
+    echo -e "  tg://proxy?server=${ip}&port=${port}&secret=${dd_secret}"
+    echo -e "  https://t.me/proxy?server=${ip}&port=${port}&secret=${dd_secret}"
     echo ""
-    echo -e "  https://t.me/proxy?server=${ip}&port=${port}&secret=${ee_secret}"
+    echo -e "  ${YELLOW}TLS 链接（更隐蔽，无推广）:${NC}"
+    echo -e "  tg://proxy?server=${ip}&port=${port}&secret=${ee_secret}"
     echo ""
     echo -e "${GREEN}============================================${NC}"
     echo ""
