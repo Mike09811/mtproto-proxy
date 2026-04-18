@@ -1,0 +1,17 @@
+#!/bin/bash
+echo "=== MTProto Proxy 诊断 ==="
+echo ""
+echo "1. 服务状态:"
+systemctl status mtprotoproxy 2>&1 | head -10
+echo ""
+echo "2. 端口监听:"
+ss -tlnp | grep 11010 || echo "11010 端口未监听"
+echo ""
+echo "3. 防火墙规则:"
+iptables -L -n | grep -E "11010|DROP|REJECT" || echo "无相关防火墙规则"
+echo ""
+echo "4. 进程:"
+ps aux | grep mtprotoproxy | grep -v grep || echo "进程未运行"
+echo ""
+echo "5. 日志:"
+journalctl -u mtprotoproxy -n 20 --no-pager 2>/dev/null || echo "无法读取日志"
