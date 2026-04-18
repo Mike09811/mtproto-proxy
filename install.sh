@@ -44,23 +44,52 @@ generate_secret() {
     head -c 16 /dev/urandom | xxd -ps
 }
 
+check_and_skip_deps() {
+    # 如果 python3 git curl xxd 都已存在，跳过包管理器
+    command -v python3 &>/dev/null && command -v git &>/dev/null && \
+    command -v curl &>/dev/null && command -v xxd &>/dev/null
+}
+
 install_deps() {
-    print_info "安装依赖..."
-    if command -v apt-get &>/dev/null; then
-        apt-get update -qq
-        apt-get install -y -qq python3 python3-pip git curl xxd >/dev/null 2>&1
-    elif command -v yum &>/dev/null; then
-        yum install -y -q python3 python3-pip git curl vim-common >/dev/null 2>&1
-    elif command -v dnf &>/dev/null; then
-        dnf install -y -q python3 python3-pip git curl vim-common >/dev/null 2>&1
+    print_info "检查依赖..."
+
+    if check_and_skip_deps; then
+        print_msg "基础依赖已就绪，跳过系统包安装"
     else
-        print_err "不支持的系统包管理器，请手动安装 python3 git curl"
-        exit 1
+        print_info "安装系统依赖（可能需要几分钟）..."
+        if command -v apt-get &>/dev/null; then
+            # 跳过慢源，只用主源，加超时
+            apt-get update -qq -o Acquire::http::Timeout=15 -o Acquire::Retries=2 2>/dev/null || \
+                print_warn "apt update 部分失败，继续尝试安装..."
+            apt-get install -y -qq --no-install-recommends python3 python3-pip git curl xxd 2>/dev/null || \
+                apt-get install -y -qq python3 git curl 2>/dev/null || true
+        elif command -v yum &>/dev/null; then
+            yum install -y -q python3 python3-pip git curl vim-common 2>/dev/null || true
+        elif command -v dnf &>/dev/null; then
+            dnf install -y -q python3 python3-pip git curl vim-common 2>/dev/null || true
+        fi
+
+        # 最终检查
+        if ! command -v python3 &>/dev/null; then
+            print_err "python3 未安装，请手动安装后重试"
+            exit 1
+        fi
+        if ! command -v git &>/dev/null; then
+            print_err "git 未安装，请手动安装后重试"
+            exit 1
+        fi
+        print_msg "系统依赖安装完成"
     fi
 
-    pip3 install -q cryptography 2>/dev/null || print_warn "cryptography 安装失败，将使用内置加密（较慢）"
-    pip3 install -q uvloop 2>/dev/null || print_warn "uvloop 安装失败，不影响使用"
-    print_msg "依赖安装完成"
+    # pip 安装加速模块（非必须，失败不影响）
+    print_info "安装 Python 加速模块（可选）..."
+    pip3 install -q --timeout 15 cryptography 2>/dev/null || \
+        python3 -m pip install -q --timeout 15 cryptography 2>/dev/null || \
+        print_warn "cryptography 安装失败，将使用内置加密（较慢但可用）"
+    pip3 install -q --timeout 15 uvloop 2>/dev/null || \
+        python3 -m pip install -q --timeout 15 uvloop 2>/dev/null || \
+        print_warn "uvloop 安装失败，不影响使用"
+    print_msg "依赖检查完成"
 }
 
 install_proxy() {
@@ -70,7 +99,19 @@ install_proxy() {
         cp -f "$INSTALL_DIR/config.py" "/tmp/mtproto_config_backup.py" 2>/dev/null || true
         rm -rf "$INSTALL_DIR"
     fi
-    git clone -q "$REPO_URL" "$INSTALL_DIR"
+
+    # 尝试 GitHub，失败则用镜像
+    if ! timeout 30 git clone --depth 1 -q "$REPO_URL" "$INSTALL_DIR" 2>/dev/null; then
+        print_warn "GitHub 连接慢，尝试镜像..."
+        local MIRROR_URL="https://ghproxy.com/$REPO_URL"
+        if ! timeout 30 git clone --depth 1 -q "$MIRROR_URL" "$INSTALL_DIR" 2>/dev/null; then
+            MIRROR_URL="https://mirror.ghproxy.com/$REPO_URL"
+            timeout 60 git clone --depth 1 -q "$MIRROR_URL" "$INSTALL_DIR" || {
+                print_err "下载失败，请检查网络后重试"
+                exit 1
+            }
+        fi
+    fi
     print_msg "下载完成"
 }
 
